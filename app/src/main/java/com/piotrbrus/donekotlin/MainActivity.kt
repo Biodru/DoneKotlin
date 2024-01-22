@@ -27,7 +27,8 @@ class MainActivity : ComponentActivity() {
                 SetupNavigationGraph(
                     startDestination = Screen.Authentication.route,
                     navigationController = navController,
-                    googleAuthUiClient = googleAuthUiClient
+                    googleAuthUiClient = googleAuthUiClient,
+                    applicationContext = applicationContext
                 )
             }
         }

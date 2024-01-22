@@ -1,10 +1,13 @@
 package com.piotrbrus.donekotlin.navigation
 
 import android.app.Activity.RESULT_OK
+import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -18,8 +21,7 @@ import androidx.navigation.navArgument
 import com.piotrbrus.donekotlin.presentation.auth.GoogleAuthUiClient
 import com.piotrbrus.donekotlin.presentation.auth.SignInViewModel
 import com.piotrbrus.donekotlin.util.Constans.WRITE_EDIT_SCREEN_ARGUMENT_KEY
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
+import com.piotrbrus.donekotlin.presentation.HomeScreen
 import com.piotrbrus.donekotlin.presentation.auth.AuthScreen
 import kotlinx.coroutines.launch
 
@@ -28,19 +30,29 @@ import kotlinx.coroutines.launch
 fun SetupNavigationGraph(
     startDestination: String,
     navigationController: NavHostController,
-    googleAuthUiClient: GoogleAuthUiClient
+    googleAuthUiClient: GoogleAuthUiClient,
+    applicationContext: Context
 ) {
     NavHost(
         startDestination = startDestination,
         navController = navigationController
     ) {
-        authenticationRoute(googleAuthUiClient)
-        homeRoute()
+        authenticationRoute(
+            googleAuthUiClient = googleAuthUiClient,
+            navigationController = navigationController
+        )
+        homeRoute(
+            navigationController = navigationController,
+            googleAuthUiClient = googleAuthUiClient,
+            applicationContext = applicationContext
+        )
         writeRoute()
     }
 }
 
-fun NavGraphBuilder.authenticationRoute(googleAuthUiClient: GoogleAuthUiClient) {
+fun NavGraphBuilder.authenticationRoute(
+    googleAuthUiClient: GoogleAuthUiClient, navigationController: NavHostController
+) {
     composable(route = Screen.Authentication.route) {
         val viewModel = viewModel<SignInViewModel>()
         val state by viewModel.state.collectAsStateWithLifecycle()
@@ -60,6 +72,18 @@ fun NavGraphBuilder.authenticationRoute(googleAuthUiClient: GoogleAuthUiClient) 
             }
         )
 
+        LaunchedEffect(key1 = Unit, block = {
+            if (googleAuthUiClient.getSignedInUser() != null) {
+                navigationController.navigate(Screen.Home.route)
+            }
+        })
+
+        LaunchedEffect(key1 = state.isSigninSuccessful, block = {
+            if (state.isSigninSuccessful) {
+                navigationController.navigate(Screen.Home.route)
+            }
+        })
+
         AuthScreen(state = state, onSignInClick = {
             scope.launch {
                 val signInIntentSender = googleAuthUiClient.signIn()
@@ -73,9 +97,27 @@ fun NavGraphBuilder.authenticationRoute(googleAuthUiClient: GoogleAuthUiClient) 
     }
 }
 
-fun NavGraphBuilder.homeRoute() {
+fun NavGraphBuilder.homeRoute(
+    googleAuthUiClient: GoogleAuthUiClient,
+    applicationContext: Context,
+    navigationController: NavHostController
+) {
     composable(route = Screen.Home.route) {
+        val scope = rememberCoroutineScope()
+        val viewModel = viewModel<SignInViewModel>()
+        HomeScreen(userData = googleAuthUiClient.getSignedInUser(), onSignOut = {
+            scope.launch {
+                googleAuthUiClient.signOut()
+                Toast.makeText(
+                    applicationContext,
+                    "Wyloguj",
+                    Toast.LENGTH_LONG
+                ).show()
 
+                navigationController.popBackStack()
+                viewModel.resetState()
+            }
+        })
     }
 }
 

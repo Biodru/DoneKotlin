@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,18 +31,20 @@ import com.piotrbrus.donekotlin.R.drawable.google_logo
 @Composable
 fun AnimatedGoogleSignInButton(
     modifier: Modifier = Modifier,
-    loadingState: Boolean = false,
     primaryText: String = "Zaloguj z google",
     icon: Int = google_logo,
-    borderColor: Color = MaterialTheme.colorScheme.surfaceVariant,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
-    borderStrokeWidth: Dp = 1.dp,
-    progressIndicatorColor: Color = MaterialTheme.colorScheme.primary,
+    borderColor: Color = MaterialTheme.colorScheme.secondary,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
+    borderStrokeWidth: Dp = 3.dp,
+    progressIndicatorColor: Color = MaterialTheme.colorScheme.onPrimary,
     onClick: () -> Unit
 ) {
     var loading by remember { mutableStateOf(false) }
     Button(
-        onClick = onClick,
+        onClick = {
+            loading = true
+            onClick()
+        },
         modifier = modifier.animateContentSize(
             animationSpec = tween(
                 durationMillis = 300,
@@ -68,7 +69,7 @@ fun AnimatedGoogleSignInButton(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = primaryText,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onPrimary,
                 style = TextStyle(fontSize = MaterialTheme.typography.bodyMedium.fontSize)
             )
         }
@@ -80,12 +81,4 @@ fun AnimatedGoogleSignInButton(
 @Preview
 fun AnimatedGoogleSignInButtonPreview() {
     AnimatedGoogleSignInButton {}
-}
-
-@Composable
-@Preview
-fun AnimatedGoogleSignInButtonPreview2() {
-    AnimatedGoogleSignInButton(loadingState = true) {
-
-    }
 }
